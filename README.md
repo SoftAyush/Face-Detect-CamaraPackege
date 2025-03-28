@@ -1,4 +1,4 @@
-# Face Detect Camera
+# Face Detect Camera Packege
 
 A Flutter application for real-time face detection using the device camera.
 
