@@ -1,16 +1,56 @@
-# face_detect_camara
+# Face Detect Camera
 
-A new Flutter project.
+A Flutter application for real-time face detection using the device camera.
+
+## Features
+- Real-time face detection
+- Camera integration for live analysis
+- Smooth and optimized performance
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+### Prerequisites
+Ensure you have Flutter installed. If not, follow the [official Flutter installation guide](https://docs.flutter.dev/get-started/install).
 
-A few resources to get you started if this is your first Flutter project:
+### Installation
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/yourusername/face_detect_camara.git
+   cd face_detect_camara
+   ```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+2. Install dependencies:
+   ```sh
+   flutter pub get
+   ```
+
+3. Run the app:
+   ```sh
+   flutter run
+   ```
+
+## Permissions
+This app requires camera permissions. Add the following to your `AndroidManifest.xml` file:
+
+```xml
+ <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+        
+    <uses-permission android:name="android.permission.CAMERA"/>
+```
+
+For iOS, add this to `Info.plist`:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>We need access to your camera for face detection.</string>
+```
+
+## Contributing
+Feel free to submit pull requests or open issues for improvements.
+
+## License
+[MIT License](LICENSE)
+
