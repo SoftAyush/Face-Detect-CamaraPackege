@@ -9,8 +9,28 @@ class PreviewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Preview Image")),
-      body: Center(child: imagePath.isNotEmpty ? Image.file(File(imagePath)) : Text("No Image Captured")),
+      body: Image.file(File(imagePath)),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FloatingActionButton(
+            onPressed: () {
+              Navigator.pop(context, false);
+            },
+            child: const Icon(Icons.delete),
+          ),
+          const SizedBox(width: 30),
+          FloatingActionButton(
+            onPressed:
+                () => {
+                  // Navigator.pop(context, true),
+                },
+
+            child: const Icon(Icons.check_rounded),
+          ),
+        ],
+      ),
     );
   }
 }
