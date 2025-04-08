@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:camera/camera.dart';
 import 'package:face_detect_camara/CamaraPackeege/Constant.dart';
+import 'package:face_detect_camara/CamaraPackeege/FacePainter.dart';
 import 'package:face_detect_camara/CamaraPackeege/PreviewWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -19,7 +18,6 @@ class _HomeWidgetState extends State<HomeWidget> {
   bool _isProcessing = false;
   bool _isFaceDetected = false;
   List<Face> _faces = [];
-  Size _imageSize = Size.zero;
 
   @override
   void initState() {
@@ -38,29 +36,28 @@ class _HomeWidgetState extends State<HomeWidget> {
 
   void _initializeCamera() async {
     _controller = CameraController(
-      cameras[1],
-      ResolutionPreset.high,
+      cameras[1], // Use the front or back camera (adjust this)
+      ResolutionPreset.high, // Adjust to your preference
       enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.nv21, // Ensures compatibility with MLKit
+      imageFormatGroup: ImageFormatGroup.nv21, // YUV format for camera
     );
+
     await _controller.initialize();
     if (!mounted) return;
     _startFaceDetection();
   }
 
   void _startFaceDetection() {
-    Timer.periodic(const Duration(microseconds: 500), (timer) async {
-      if (!_controller.value.isInitialized || _isProcessing) return;
+    _controller.startImageStream((CameraImage image) async {
+      if (_isProcessing) return;
       _isProcessing = true;
+
       try {
-        final XFile file = await _controller.takePicture();
-        final InputImage inputImage = InputImage.fromFilePath(file.path);
+        final InputImage inputImage = _convertCameraImage(image);
         final faces = await _faceDetector.processImage(inputImage);
-        final imageSize = Size(_controller.value.previewSize!.width, _controller.value.previewSize!.height);
 
         setState(() {
           _faces = faces;
-          _imageSize = imageSize;
           _isFaceDetected = faces.isNotEmpty;
         });
       } catch (e) {
@@ -71,13 +68,27 @@ class _HomeWidgetState extends State<HomeWidget> {
     });
   }
 
+  // Convert CameraImage to InputImage for ML Kit
+  InputImage _convertCameraImage(CameraImage image) {
+    final bytes = image.planes[0].bytes;
+    final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
+
+    // Handle rotation based on device orientation
+    final InputImageRotation rotation = InputImageRotation.rotation0deg;
+
+    final InputImageFormat format = InputImageFormat.nv21;
+
+    final metadata = InputImageMetadata(size: imageSize, rotation: rotation, format: format, bytesPerRow: image.planes[0].bytesPerRow);
+
+    return InputImage.fromBytes(bytes: bytes, metadata: metadata);
+  }
+
   void _captureImage() async {
     if (_isFaceDetected) {
       final XFile file = await _controller.takePicture();
       if (mounted) {
         Navigator.push(context, MaterialPageRoute(builder: (context) => PreviewWidget(imagePath: file.path)));
       }
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Face detected! Image saved: ${file.path}')));
     }
   }
 
@@ -93,15 +104,25 @@ class _HomeWidgetState extends State<HomeWidget> {
     return Scaffold(
       body:
           _controller.value.isInitialized
-              ? Stack(children: [CameraPreview(_controller)])
-              : const Center(child: CircularProgressIndicator()), // Show a loader while initializing
-      floatingActionButton:
-          _isFaceDetected
-              ? FloatingActionButton(
-                onPressed: _captureImage, // ✅ Fix function call
-                child: const Icon(Icons.camera_alt_outlined),
+              ? Stack(
+                children: [
+                  Transform.scale(
+                    scaleX: _controller.description.lensDirection == CameraLensDirection.front ? -1 : 1, // Flip for front camera
+                    child: CameraPreview(_controller),
+                  ),
+                  CustomPaint(
+                    isComplex: true,
+                    painter: FacePainter(
+                      faces: _faces,
+                      imageSize: Size(_controller.value.previewSize!.height, _controller.value.previewSize!.width),
+                      isFrontCamera: _controller.description.lensDirection == CameraLensDirection.front,
+                    ),
+                    child: Container(),
+                  ),
+                ],
               )
-              : null, // Hide if no face detected
+              : const Center(child: CircularProgressIndicator()),
+      floatingActionButton: _isFaceDetected ? FloatingActionButton(onPressed: _captureImage, child: const Icon(Icons.camera_alt_outlined)) : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
